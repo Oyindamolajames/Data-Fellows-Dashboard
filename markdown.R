@@ -9,7 +9,7 @@ data_r <- read_sheet("https://docs.google.com/spreadsheets/d/1IVheNIn_Ns1w4kUd1-
 data_merge <- data_l %>% left_join( data_r, 
                                     by=c('Email Address'='Email'))%>%
   select(c(2:9), c(11:15)) %>%
-  filter(Name != "NA")
+  filter(`Please state your interest of specialization` != "NA")
 
 responses <- dim(data_merge)[1]
 responses

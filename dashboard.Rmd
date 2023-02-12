@@ -1,5 +1,5 @@
 ---
-title: "Data Fellows Dashboard"
+title: "Group 2 Data Fellows Dashboard"
 output: 
   flexdashboard::flex_dashboard:
     theme: cerulean
@@ -23,14 +23,20 @@ library(DT)
 #data_r <- read_sheet("https://docs.google.com/spreadsheets/d/1IVheNIn_Ns1w4kUd1-IMI3aVEUCui5N94JLQXBnDtCQ/edit#gid=908840308")
 
 # read data from folder
-data_l <- read_xlsx("data/data_l.xlsx")
 data_r <- read_xlsx("data/data_r.xlsx")
+data_l <- read_xlsx("data/data_l.xlsx")
+
+# Clean survey data
+
+data_l <- data_l %>%
+  filter(`Please state your interest of specialization` == "Data Science" | `Please state your interest of specialization` == "Data Analysis" ) %>%
+  filter(`rate your level of proficiency` != "NA" )
 
 # Merge Data
 data_merge <- data_l %>% left_join( data_r, 
-                                    by=c('Email Address'='Email')) %>%
-  select(c(2:9), c(11:15)) %>%
-  filter(Name != "NA")
+                                    by=c('Email Address'='Email'))%>%
+  select(c(2:9), c(11:15)) 
+  
 
 # Function for Percentage
 pct = function(x, digits=1) {
@@ -73,7 +79,9 @@ prof_tool <- data_merge %>%
     `Which of these tools do you have high proficiency in?` == "Excel" ~ "Excel",
     `Which of these tools do you have high proficiency in?` == "Microsoft Excel" ~ "Excel",
     `Which of these tools do you have high proficiency in?` == "None" ~ "None",
-    `Which of these tools do you have high proficiency in?` == "None, Just Excel" ~ "Excel")) %>%
+    `Which of these tools do you have high proficiency in?` == "None, Just Excel" ~ "Excel",
+    `Which of these tools do you have high proficiency in?` == "Excel, tableau and python" ~ "Excel",
+  `Which of these tools do you have high proficiency in?` == "Tableau" ~ "Tableau")) %>%
   count(proficiency) %>%
   arrange(n) %>%
   mutate(p = n / sum(n) )
@@ -106,6 +114,7 @@ mem_spe <- ggplot(specialization, aes(x="", fill= `Please state your interest of
 # Question 5
 # ================ Members by expereince ============
 mem_exp <- data_merge %>%
+  filter(`How many years of Data experience do you have?` != "NA") %>%
   select(`How many years of Data experience do you have?`) %>%
   rename(exp = `How many years of Data experience do you have?`) %>%
   count(exp) %>% 
