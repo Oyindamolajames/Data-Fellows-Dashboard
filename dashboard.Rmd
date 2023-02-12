@@ -2,8 +2,11 @@
 title: "Data Fellows Dashboard"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: columns
-    vertical_layout: fill
+    theme: cerulean
+    orientation: rows
+    vertical_layout: scroll
+    source_code: "https://github.com/Oyindamolajames/Data-Fellows-Dashboard"
+    social: [ "menu" ]
 ---
 
 ```{r setup, include=FALSE}
@@ -12,10 +15,16 @@ library(flexdashboard)
 library(googlesheets4)
 library(dplyr)
 library(ggplot2)
+library(readxl)
+library(DT)
 
-# Import data
-data_l<- read_sheet("https://docs.google.com/spreadsheets/d/1RpZAFLFT84gitnUg9s0mB0KEcYTuIWr9jKrpdj4vSo8/edit#gid=1061786364")
-data_r <- read_sheet("https://docs.google.com/spreadsheets/d/1IVheNIn_Ns1w4kUd1-IMI3aVEUCui5N94JLQXBnDtCQ/edit#gid=908840308")
+# Import data from google sheet
+#data_l<- read_sheet("https://docs.google.com/spreadsheets/d/1RpZAFLFT84gitnUg9s0mB0KEcYTuIWr9jKrpdj4vSo8/edit#gid=1061786364")
+#data_r <- read_sheet("https://docs.google.com/spreadsheets/d/1IVheNIn_Ns1w4kUd1-IMI3aVEUCui5N94JLQXBnDtCQ/edit#gid=908840308")
+
+# read data from folder
+data_l <- read_xlsx("data/data_l.xlsx")
+data_r <- read_xlsx("data/data_r.xlsx")
 
 # Merge Data
 data_merge <- data_l %>% left_join( data_r, 
@@ -38,11 +47,18 @@ responses
 level_pro <- data_merge %>%
   select(`rate your level of proficiency`, `Please state your interest of specialization`) %>%
   group_by(`rate your level of proficiency`, `Please state your interest of specialization`) %>%
-  count(`rate your level of proficiency`, `Please state your interest of specialization`)
+  count(`rate your level of proficiency`, `Please state your interest of specialization`) %>%
+  ungroup() %>%
+  mutate(p = n/sum(n))
 
 specialization_proficiency <- ggplot(level_pro, aes(x= `rate your level of proficiency`,y=n, fill=`Please state your interest of specialization`)) + 
   geom_bar(stat = "identity", position = "dodge") +
-  theme(legend.position = "top", legend.direction = "vertical")
+  theme(legend.position = "top", legend.direction = "vertical") +
+  geom_text(aes(label=pct(p, 2), y = n/2 ), position = position_dodge(1)) + 
+  theme(
+    axis.text.y=element_blank(),
+    axis.ticks.y=element_blank()) +
+  labs(x="", y="")
 
 
 # Question 3 
@@ -65,9 +81,9 @@ prof_tool <- data_merge %>%
 
 
 proficiency <- ggplot(prof_tool, aes(x=reorder(proficiency, -n), y = n)) + 
-  geom_bar(stat="identity", fill="black") + 
+  geom_bar(stat="identity", fill="steelblue") + 
   labs(x="", y="") + 
-  geom_text(aes(label=pct(p, 2), y = n + 0.1 )) + 
+  geom_text(aes(label=pct(p, 2), y = n /2 )) + 
   theme(
     axis.text.y=element_blank(),
     axis.ticks.y=element_blank()) 
@@ -84,7 +100,8 @@ mem_spe <- ggplot(specialization, aes(x="", fill= `Please state your interest of
   geom_bar(stat = "identity") +
   coord_polar(theta = "y", start = 0) +
   theme_void() +
-  geom_text(aes(label=pct(p, 2), y = n + 0.1 )) 
+  geom_text(aes(label=pct(p, 2), y = n/2  )) +
+  labs(x="", y="")
 
 # Question 5
 # ================ Members by expereince ============
@@ -93,9 +110,15 @@ mem_exp <- data_merge %>%
   rename(exp = `How many years of Data experience do you have?`) %>%
   count(exp) %>% 
   mutate(p = n / sum(n)) %>%
-  ggplot(aes(x=n, y=exp)) +
-  geom_bar(stat="identity", fill="black") +
-  coord_flip() 
+  ggplot(aes(x=exp, y=n)) +
+  geom_bar(stat="identity", fill="steelblue") +
+  theme(
+    axis.text.y=element_blank(),
+    axis.ticks.y=element_blank()) +
+  geom_text(aes(label=pct(p, 2), y = n/2  )) +
+  labs(x="", y="")
+  
+  
   
 # Question 6 
 # =============== Members by project ===================
@@ -113,24 +136,29 @@ yes <- mem_proj$n[2]
   
 
 ```
+Dash
+===================================== 
+## Row {data-height="170"}
 
-## Column {data-width="300"}
+### Responses {data-height=150}
 
-### Responses
-
-```{r}
+```{r }
 valueBox(responses, icon = "fa-user")
 ```
 
-### Members by experience
-```{r}
-plot(mem_exp)
+
+### Members by project
+
+```{r fig.width=10, fig.height=7}
+gauge(yes, 0, 100, symbol="%", gaugeSectors(
+  success = c(80, 100), warning = c(40, 79), danger = c(0, 39)
+  ))
 ```
 
-## Column {data-width="350"}
+
+## Row {data-height="400"}
 
 ### Proficiency by tools
-
 ```{r}
  plot(proficiency)
 ```
@@ -140,7 +168,10 @@ plot(mem_exp)
 plot(mem_spe)
 ```
 
-## Column {data-width="350"}
+
+
+
+## Row {data-height="400"}
 
 ### Proficiency by Level
 
@@ -148,10 +179,14 @@ plot(mem_spe)
 plot(specialization_proficiency)
 ```
 
-### Members by project
-
+### Members by experience
 ```{r}
-gauge(yes, 0, 100, symbol="%", gaugeSectors(
-  success = c(80, 100), warning = c(40, 79), danger = c(0, 39)
-  ))
+plot(mem_exp)
+```
+
+Dataset 
+===================================== 
+### Merged Data {data-height=800}
+```{r }
+datatable(data_merge)
 ```

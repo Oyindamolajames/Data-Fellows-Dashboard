@@ -1,6 +1,7 @@
 library(googlesheets4)
 library(dplyr)
 library(ggplot2)
+library(readxl)
 
 data_l<- read_sheet("https://docs.google.com/spreadsheets/d/1RpZAFLFT84gitnUg9s0mB0KEcYTuIWr9jKrpdj4vSo8/edit#gid=1061786364")
 data_r <- read_sheet("https://docs.google.com/spreadsheets/d/1IVheNIn_Ns1w4kUd1-IMI3aVEUCui5N94JLQXBnDtCQ/edit#gid=908840308")
@@ -66,3 +67,8 @@ mem_proj <- data_merge %>%
     project == "No" ~ "No",
     TRUE ~ "Yes"
   ))
+
+write.xlsx(data_l, "data_l.csv")
+write.xlsx(data_r, "data_r.csv")
+
+write
